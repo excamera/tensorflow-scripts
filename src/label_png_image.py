@@ -7,11 +7,13 @@
 import tensorflow as tf
 import sys
 
+from PIL import Image
+
 image_path     = sys.argv[1]
 filename_queue = tf.train.string_input_producer([image_path])
 reader         = tf.WholeFileReader()
 key, value     = reader.read(filename_queue)
-my_img         = tf.image.decode_png(value)
+my_img         = tf.image.decode_jpeg(value)
 init_op        = tf.initialize_all_variables()
 
 with tf.Session() as sess:
@@ -23,7 +25,7 @@ with tf.Session() as sess:
     image = my_img.eval()
 
   print(image.shape)
-  Image.show(Image.fromarray(np.asarray(image)))
+  Image.Show(Image.fromarray(np.asarray(image)))
 
   coord.request_stop()
   coord.join(threads)

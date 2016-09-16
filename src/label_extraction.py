@@ -1,7 +1,9 @@
+from __future__ import absolute_import
+from __future__ import division
 from __future__ import print_function
-from tensorflow.models.image.imagenet.classify_image import maybe_download_and_extract
-from tensorflow.models.image.imagenet.classify_image import run_inference_on_image
 
+import re
+import tarfile
 import os
 import sys
 import uuid
@@ -9,6 +11,53 @@ import logging
 import time
 from random import randint
 import subprocess as sp
+
+import numpy as np
+from six.moves import urllib
+import tensorflow as tf
+import tensorflow.models.image.imagenet.classify_image as ic
+
+FLAGS = tf.app.flags.FLAGS
+
+###
+#  Runs inference on an image.
+#
+#  Args:
+#    image: Image file name.
+#
+#  Returns:
+#    Nothing
+###
+def run_top_k_predictions_on_image(image):
+
+  if not tf.gfile.Exists(image):
+    tf.logging.fatal('File does not exist %s', image)
+  image_data = tf.gfile.FastGFile(image, 'rb').read()
+
+  # Creates graph from saved GraphDef.
+  ic.create_graph()
+
+  with tf.Session() as sess:
+    # Some useful tensors:
+    # 'softmax:0': A tensor containing the normalized prediction across
+    #   1000 labels.
+    # 'pool_3:0': A tensor containing the next-to-last layer containing 2048
+    #   float description of the image.
+    # 'DecodeJpeg/contents:0': A tensor containing a string providing JPEG
+    #   encoding of the image.
+    # Runs the softmax tensor by feeding the image_data as input to the graph.
+    softmax_tensor = sess.graph.get_tensor_by_name('softmax:0')
+    predictions = sess.run(softmax_tensor, {'DecodeJpeg/contents:0': image_data})
+    predictions = np.squeeze(predictions)
+
+    # Creates node ID --> English string lookup.
+    node_lookup = ic.NodeLookup()
+    top_k = predictions.argsort()[-FLAGS.num_top_predictions:][::-1]
+    for node_id in top_k:
+      human_string = node_lookup.id_to_string(node_id)
+      score = predictions[node_id]
+      print('%s (score = %.5f)' % (human_string, score))
+
 
 # Set Logging
 sys.path.append(".")
@@ -19,8 +68,4 @@ logger.setLevel(logging.INFO)
 image_path = sys.argv[1]
 
 # Run Inference on Image
-(infer,times) = run_inference_on_image(image_path)
-
-# Write to the output_file
-output_file = sys.argv[2]
-open("/tmp/" + output_file, "w+").write(infer)
+print (run_top_k_predictions_on_image(image_path))
