@@ -38,6 +38,11 @@ def run_top_k_predictions_on_image(image):
   ic.create_graph()
 
   with tf.Session() as sess:
+    # Convert the PNG image to a height x width x 3 (channels) Numpy array, 
+    # for example using PIL, then feed the 'DecodeJpeg:0' tensor:
+    image_content = Image.open(image)
+    image_array = np.array(image_content)[:, :, 0:3]  # Select RGB channels only.
+
     # Some useful tensors:
     # 'softmax:0': A tensor containing the normalized prediction across
     #   1000 labels.
@@ -47,7 +52,7 @@ def run_top_k_predictions_on_image(image):
     #   encoding of the image.
     # Runs the softmax tensor by feeding the image_data as input to the graph.
     softmax_tensor = sess.graph.get_tensor_by_name('softmax:0')
-    predictions = sess.run(softmax_tensor, {'DecodeJpeg/contents:0': image_data})
+    predictions = sess.run(softmax_tensor, {'DecodeJpeg/contents:0': image_array})
     predictions = np.squeeze(predictions)
 
     # Creates node ID --> English string lookup.
@@ -65,7 +70,11 @@ logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 # Get Image
-image_path = sys.argv[1]
+if len(sys.argv) >= 1:
+    image_path = sys.argv[1]
+else:
+    print ("Need an image to operate on.")
+    sys.exit()
 
 # Run Inference on Image
 print (run_top_k_predictions_on_image(image_path))
