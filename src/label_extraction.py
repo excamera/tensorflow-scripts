@@ -65,7 +65,11 @@ logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 # Get Image
-image_path = sys.argv[1]
+if len(sys.argv) >= 1:
+    image_path = sys.argv[1]
+else:
+    print ("Pass the path to an Image file")
+    sys.exit(1)
 
 # Run Inference on Image
 print (run_top_k_predictions_on_image(image_path))
