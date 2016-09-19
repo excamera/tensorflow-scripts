@@ -73,8 +73,8 @@ logger.setLevel(logging.INFO)
 if len(sys.argv) >= 1:
     image_path = sys.argv[1]
 else:
-    print ("Need an image to operate on.")
-    sys.exit()
+    print ("Pass the path to an Image file")
+    sys.exit(1)
 
 # Run Inference on Image
 print (run_top_k_predictions_on_image(image_path))
